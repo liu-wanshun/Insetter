@@ -2,8 +2,7 @@
 
 [![](https://jitpack.io/v/com.gitee.liu_wanshun/Insetter.svg)](https://jitpack.io/#com.gitee.liu_wanshun/Insetter)
 
-	一个完全无侵入、简单易用的处理WindowInsets的库。
-	https://developer.android.com/reference/android/view/WindowInsets.html。
+一个完全无侵入、简单易用的处理 [WindowInsets](https://developer.android.com/reference/android/view/WindowInsets.html) 的库。
 
 ## Gradle
 
