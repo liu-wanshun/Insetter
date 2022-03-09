@@ -5,7 +5,7 @@ object Versions {
     const val MIN_SDK = 21
 
     //plugin
-    const val androidGradlePlugin = "7.1.1"
+    const val androidGradlePlugin = "7.1.2"
     const val kotlin = "1.6.10"
     const val dagger = "2.40.5"
     const val navigation = "2.5.0-alpha01"

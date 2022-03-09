@@ -1,7 +1,17 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Theme.Insetter" parent="Theme.Material3.DayNight.NoActionBar">
-        <item name="android:statusBarColor" >@android:color/transparent</item>
-        <item name="android:navigationBarColor">@android:color/transparent</item>
+
+    <!-- 默认基本主题 -->
+    <style name="BaseTheme" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:navigationBarColor">?android:attr/colorBackground</item>
+        <item name="android:statusBarColor">?android:attr/colorBackground</item>
+    </style>
+
+    <style name="AppTheme" parent="BaseTheme">
+        <!-- 状态栏 -->
+        <item name="android:windowLightStatusBar" tools:targetApi="m" >?attr/isLightTheme</item>
+        <!-- 导航栏 -->
+        <item name="android:enforceNavigationBarContrast" tools:targetApi="q">false</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">?attr/isLightTheme
+        </item>
     </style>
 </resources>

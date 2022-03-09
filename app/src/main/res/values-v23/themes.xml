@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="BaseTheme" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:navigationBarColor">?android:attr/colorBackground</item>
+        <!--    将状态栏颜色设置透明，因为 API 23+ 支持修改状态栏图标颜色    -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+    </style>
+</resources>
