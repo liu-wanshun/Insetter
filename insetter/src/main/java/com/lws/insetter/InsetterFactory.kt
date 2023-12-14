@@ -7,10 +7,6 @@ import android.util.Log
 import android.view.InflateException
 import android.view.LayoutInflater
 import android.view.View
-import androidx.core.graphics.Insets
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.updatePadding
 import com.lws.insetter.Insetter.TAG
 import java.lang.reflect.Constructor
 import kotlin.collections.set
@@ -23,7 +19,7 @@ class InsetterFactory : LayoutInflater.Factory2 {
 
     var factory2: LayoutInflater.Factory2? = null
     var factory: LayoutInflater.Factory? = null
-
+    private val interceptors = mutableListOf<Interceptor>()
     override fun onCreateView(name: String, context: Context, attrs: AttributeSet): View? {
         return onCreateView(null, name, context, attrs)
     }
@@ -34,62 +30,40 @@ class InsetterFactory : LayoutInflater.Factory2 {
         context: Context,
         attrs: AttributeSet
     ): View? {
-
-        val view = factory2?.onCreateView(parent, name, context, attrs)
-            ?: factory2?.onCreateView(null, name, context, attrs)
-            ?: factory?.onCreateView(name, context, attrs)
-            ?: createViewFromTag(context, name, attrs)
-
-
-        view?.run {
-            val materialInsets = view.context.obtainStyledAttributes(
-                attrs,
-                com.google.android.material.R.styleable.Insets
-            )
-            val paddingLeftSystemWindowInsets =
-                materialInsets.getBoolean(
-                    com.google.android.material.R.styleable.Insets_paddingLeftSystemWindowInsets,
-                    false
-                )
-
-            val paddingTopSystemWindowInsets =
-                materialInsets.getBoolean(
-                    com.google.android.material.R.styleable.Insets_paddingTopSystemWindowInsets,
-                    false
-                )
-            val paddingRightSystemWindowInsets =
-                materialInsets.getBoolean(
-                    com.google.android.material.R.styleable.Insets_paddingRightSystemWindowInsets,
-                    false
-                )
-            val paddingBottomSystemWindowInsets =
-                materialInsets.getBoolean(
-                    com.google.android.material.R.styleable.Insets_paddingBottomSystemWindowInsets,
-                    false
-                )
-
-
-            materialInsets.recycle()
-            if (paddingTopSystemWindowInsets || paddingBottomSystemWindowInsets || paddingLeftSystemWindowInsets || paddingRightSystemWindowInsets) {
-                val initialPadding = Insets.of(
-                    ViewCompat.getPaddingStart(view),
-                    view.paddingTop,
-                    ViewCompat.getPaddingEnd(view),
-                    view.paddingBottom
-                )
-                ViewCompat.setOnApplyWindowInsetsListener(view) { v, insetsCompat ->
-                    val insets = insetsCompat.getInsets(WindowInsetsCompat.Type.systemBars())
-                    v.updatePadding(
-                        if (paddingLeftSystemWindowInsets) insets.left + initialPadding.left else initialPadding.left,
-                        if (paddingTopSystemWindowInsets) insets.top + initialPadding.top else initialPadding.top,
-                        if (paddingRightSystemWindowInsets) insets.right + initialPadding.right else initialPadding.right,
-                        if (paddingBottomSystemWindowInsets) insets.bottom + initialPadding.bottom else initialPadding.bottom,
-                    )
-                    insetsCompat
-                }
-            }
-
+        val createView = Interceptor {
+            val (parent, name, context, attrs) = it.request()
+            val view = factory2?.onCreateView(parent, name, context, attrs)
+                ?: factory2?.onCreateView(null, name, context, attrs)
+                ?: factory?.onCreateView(name, context, attrs)
+                ?: createViewFromTag(context, name, attrs)
+            Log.e(TAG, "onCreateView: $view")
+            return@Interceptor view
         }
+
+        val test = Interceptor {
+            Log.d(TAG, "test: start $it")
+            val view = it.proceed(it.request())
+            Log.d(TAG, "test end : $it")
+            return@Interceptor view
+        }
+
+        interceptors.add(test)
+
+        interceptors.add(InsetsInterceptor())
+
+        interceptors.add(createView)
+
+        val request = Interceptor.Request(parent, name, context, attrs)
+
+        val chain = RealInterceptorChain(
+            interceptors = interceptors,
+            index = 0,
+            request = request,
+        )
+
+        val view = chain.proceed(request)
+
+        Log.e(TAG, "onCreateView: $factory2 $view")
         return view
     }
 
@@ -107,7 +81,7 @@ class InsetterFactory : LayoutInflater.Factory2 {
             mConstructorArgs[1] = attrs
             if (-1 == currentName.indexOf('.')) {
                 var view: View? = null
-                if ("View" == currentName) {
+                if ("View" == currentName || "ViewStub" == currentName) {
                     view = createView(context, currentName, "android.view.")
                 }
                 if (view == null) {
@@ -121,7 +95,7 @@ class InsetterFactory : LayoutInflater.Factory2 {
                 createView(context, currentName, null)
             }
         } catch (e: Exception) {
-            Log.w(TAG, "cannot create 【$currentName】 : ")
+            Log.w(TAG, "cannot create [$currentName]  ", e)
             null
         } finally {
             mConstructorArgs[0] = null
@@ -143,8 +117,8 @@ class InsetterFactory : LayoutInflater.Factory2 {
             }
             constructor!!.isAccessible = true
             constructor.newInstance(*mConstructorArgs)
-        } catch (e: java.lang.Exception) {
-            Log.w(TAG, "cannot create 【$name】 : ")
+        } catch (e: Exception) {
+            Log.w(TAG, "cannot create [$name]  ", e)
             null
         }
     }
